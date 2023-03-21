@@ -44,3 +44,7 @@ You should already prepare a table with the following columns:
 - type (varchar(100))
 - icon_url (varchar(256))
 - steam_market_url (varchar(256))
+
+
+---
+Thanks to [daradan](https://github.com/daradan/buff_163_scraper) for the first method 
