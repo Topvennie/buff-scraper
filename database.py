@@ -28,21 +28,11 @@ class Database:
             self.commit()
         self.connection.close()
 
-    def execute(self, sql: str, params: list = None):
+    def execute(self, sql, params=None):
         self.cursor.execute(sql, params or ())
 
     def executemany(self, sql: str, params: list = None):
         self.cursor.executemany(sql, params or ())
-
-    def fetchall(self):
-        return self.cursor.fetchall()
-
-    def fetchone(self):
-        return self.cursor.fetchone()
-
-    def query(self, sql: str, params: list = None):
-        self.cursor.execute(sql, params or ())
-        return self.fetchall()
 
     def update_many(self, data_list: list, table_name: str):
         query = ''

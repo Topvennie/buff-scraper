@@ -1,71 +1,95 @@
-import json
-import random
-import time
+import threading
+from datetime import timedelta
+from time import sleep, time
 from typing import Any
 
-import requests
+import mysql.connector.errors
 
 import config
+from buffParser import *
 from database import Database
-from item import Item
 
 
-class BuffParser:
-    def __init__(self):
-        self.database = Database(config.DATABASE_USER, config.DATABASE_PASSWORD, config.DATABASE_HOST, config.DATABASE)
-        self.sale = False
-        self.page = config.START_PAGE
-        self.items = set()
+def validate(validation: bool, error_text: str) -> bool:
+    if not validation:
+        print(error_text)
+    return validation
 
-    def start(self) -> None:
-        print('Fetching data...')
-        try:
-            for url in config.URLS:
-                self.page = 1
-                response = self.get_response(url, self.page)
-                self.parse_response(response['data']['items'])
-                while self.page < response['data']['total_page']:
-                    self.page += 1
-                    response = self.get_response(url, self.page)
-                    self.parse_response(response['data']['items'])
-        except KeyError:
-            print('-' * 45)
-            print('Temporarily cooldown received from buff')
-            print(f'Last scraped page was {self.page - 1} in the {"sellings" if self.sale else "buying"} tab')
-            print('-' * 45)
 
-        print('Saving data...')
-        self.export_to_db()
-        print(f'Saved {self.items.__len__()} items')
+def check_positive_int(number: Any) -> bool:
+    return type(number) == int and number >= 0
 
-    def get_response(self, url: str, page: int) -> Any:
-        while True:
-            params = config.PARAMS
-            if 'buying' not in url:
-                self.sale = True
-                params['use_suggestion'] = '0'
-                params['trigger'] = 'undefined_trigger'
-            else:
-                self.sale = False
-            params['page_num'] = page
-            response = requests.get(url, params=params, cookies=config.COOKIES, headers=config.HEADERS)
-            if response.status_code == 200:
-                json_response = json.loads(response.text)
-                print(f'[{page}/{json_response["data"]["total_page"]}] Parsing: {response.url}')
-                return json_response
 
-            time.sleep(random.randrange(5, 10))
-
-    def parse_response(self, responses: list) -> None:
-        for response in responses:
-            item = Item(response)
-            self.items.add(item)
-
-    def export_to_db(self) -> None:
-        items = [item.__dict__ for item in self.items]
-        with self.database as db:
-            db.update_many(items, config.DATABASE_NAME)
+def start_class(start, end):
+    BuffAPIParser(start, end).start_parsing()
 
 
 if __name__ == '__main__':
-    BuffParser().start()
+    start_time = time()
+
+    # Check if connection to database works
+    try:
+        with Database(config.DATABASE_USER, config.DATABASE_PASSWORD, config.DATABASE_HOST, config.DATABASE) as db:
+            connection_succes = True
+    except mysql.connector.errors.InterfaceError:
+        connection_succes = False
+        print('Unable to connect to the database!')
+        print('Make sure the config file is right')
+        print('Aborting script...')
+        sleep(5)
+
+    # Basic config validation
+    if config.USE_URL_METHOD:
+        config_succes = validate(
+            check_positive_int(config.START_PAGE),
+            'START_PAGE has to be a positive integer!'
+        )
+    else:
+        config_succes = validate(
+            check_positive_int(config.START_CODE),
+            'START_CODE has to be a positive integer!'
+        )
+        # Only check config.END_CODE > config.START_CODE if both values or integers
+        config_succes = config_succes and validate(
+            check_positive_int(config.END_CODE) and config.END_CODE > config.START_CODE,
+            'END_CODE has to be a positive integer and larger than START_CODE!'
+        )
+        if config.ENABLE_THREADS:
+            config_succes = config_succes and validate(
+                check_positive_int(config.AMOUNT_OF_THREADS),
+                'AMOUNT_OF_THREADS has to be a positive integer!'
+            )
+
+    if connection_succes and config_succes:
+        if config.USE_URL_METHOD:
+            print('Using the URL method')
+            BuffURLParser().start()
+        else:
+            print('Using the code method')
+            if config.ENABLE_THREADS:
+                threads = []
+                amount_of_threads = config.AMOUNT_OF_THREADS
+
+                print('THREADS ENABLED')
+                print(f'Using {amount_of_threads} thread{"s" if config.AMOUNT_OF_THREADS > 1 else ""}')
+
+                for i in range(0, amount_of_threads):
+                    # Split the code range up in equal parts
+                    start_code = ((config.END_CODE - config.START_CODE) // amount_of_threads) * i + config.START_CODE
+                    end_code = ((config.END_CODE - config.START_CODE) // amount_of_threads) * (i + 1) + config.START_CODE
+                    if i == amount_of_threads - 1:
+                        end_code = config.END_CODE
+                    threads.append(threading.Thread(target=start_class, args=(start_code, end_code)))
+
+                for thread in threads:
+                    thread.start()
+
+                for thread in threads:
+                    thread.join()
+            else:
+                print('THREADS DISABLED')
+                BuffAPIParser(config.START_CODE, config.END_CODE).start_parsing()
+
+        end_time = time()
+        running_time = str(timedelta(seconds=end_time - start_time))
+        print(f'Total execution time: {running_time}')
