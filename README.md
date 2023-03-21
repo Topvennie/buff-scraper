@@ -1,7 +1,5 @@
 # Buff Scraper
 
----
-
 Gets all item codes from buff and saves it to a database.
 It saves:
 - The item code
@@ -11,8 +9,6 @@ It saves:
 - The link to it's steam community market page
 
 ## Configuration
-
----
 
 There are 2 supported methods of getting the codes.
 1. Going over each page on [the selling page](https://buff.163.com/api/market/goods) and [the buying page](https://buff.163.com/api/market/goods/buying) and getting the information of each item listed on there.
@@ -37,8 +33,6 @@ This will select the **second** method.
 It supports threading to speed up the process. I recommend using 10 threads.
 
 ## Database
-
----
 
 All the data will be saved inside a database.
 Officially, only mysql databases are supported. 
