@@ -14,7 +14,7 @@ DATABASE_NAME = 'XXX'
 # True  | Goes over each page of the sales and/or buying tab (depends on your following configuration)
 # False | Tries each code between a start and end value
 
-USE_URL_METHOD = True
+USE_URL_METHOD = False
 
 ###########################
 #  USE_URL_METHOD = True  #
@@ -61,7 +61,7 @@ START_PAGE = 0
 # The code to start with
 START_CODE = 0
 # The maximum code value ( but not including [START_CODE, END_CODE[ )
-END_CODE = 1000000
+END_CODE = 1000000  # 1 000 000
 
 # Whether to use threads
 # Using 10 threads speeds up the process by about 2 to 4 times
