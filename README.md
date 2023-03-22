@@ -20,9 +20,21 @@ The method can be selected inside *config.py*
 
 This will select the **first** method.
 
-**Be careful! This method can and will temporarily ban you on buff if used more than once**
+---
 
-**Use at your own risk**
+**IMPORTANT WARNING**
+
+This method can and will temporarily block you from buff if used too often.
+I've been able to get every code using this method, and I only got banned on my second run however this does not mean the same will apply to you.
+
+After being blocked you need to contact support and will be unblocked after a couple of days. 
+Getting blocked a second time using this method will mean a __permanent block__. 
+
+Use the second method if you want to be safe.
+
+**USE AT YOUR OWN RISK**
+
+---
 
 However, this method is extremely faster than the second one.
 
